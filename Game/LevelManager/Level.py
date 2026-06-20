@@ -138,7 +138,7 @@ class Level:
             count = len(self.selected)
             positions = self._get_formation_positions(mouse_pos[0], mouse_pos[1], count)
             for i, sprite in enumerate(self.selected):
-                if isinstance(sprite, SquadMember) and not sprite.has_connection():
+                if not sprite.alive or (isinstance(sprite, SquadMember) and not sprite.has_connection()):
                     continue
                 sprite.move_to(positions[i][0], positions[i][1], self.sprites["Walls"].sprites)
 

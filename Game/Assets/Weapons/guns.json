@@ -1,0 +1,11 @@
+{
+  "Primary": {
+    "Musket" : {
+      "penetration": 2,
+      "vel": 100,
+      "weight": 10,
+      "range": 200
+    }
+  },
+  "Secondary": {}
+}

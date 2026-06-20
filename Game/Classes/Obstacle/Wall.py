@@ -1,6 +1,6 @@
 import pygame
 
-from Sprites.SolidSprite import SolidSprite
+from Classes.SolidSprite import SolidSprite
 from Utils.Utils import zIndex
 
 

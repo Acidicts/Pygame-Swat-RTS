@@ -1,8 +1,8 @@
 import pygame
+import os
 
-from LevelManager.Level import Level
 from LevelManager.Manager import LevelManager
-from Utils.Utils import create_character, characterColours
+from Utils.Utils import create_character, characterColours, create_from_bitmap, json_to_dict
 
 
 class Game:
@@ -22,8 +22,42 @@ class Game:
         # remove L8tr
         self.levelManager.load_level("test")
 
+        self.weapons = {
+            "Guns" : {
+                "Primary": {},
+                "Secondary": {}
+            },
+            "Melee" : {},
+            "Special" : {},
+            "Throwable" : {}
+        }
+
     def load_assets(self):
         self.generate_character_sprites()
+        self.load_misc()
+
+    def load_weapon_files(self):
+        for dirpath, dirnames, filenames in os.walk("Game/Assets/Weapons/"):
+            for filename in filenames:
+                if filename.endswith(".json"):
+                    # Raw File
+                    file_path = os.path.join(dirpath, filename)
+                    data = json_to_dict(file_path)
+                    self.load_weapon_file(data)
+
+    def load_misc(self):
+        self.assets["Misc"] = {
+            "Bullet": create_from_bitmap([[(228, 223, 84) for _ in range(6)] for _ in range(2)]),
+            "Casing": ""
+        }
+
+    def load_weapon_file(self, data):
+        for cata in data.values():
+            for weapon in cata.values():
+                self.create_weapon(weapon)
+
+    def create_weapon(self, data):
+        self.weapons[data["Type"]][data["Category"]][data["Name"]] = data
 
     def generate_character_sprites(self):
         self.assets["Commander"] = create_character(characterColours["Commander"])
@@ -36,11 +70,13 @@ class Game:
                 self.running = False
 
     def update(self, dt):
-        self.levelManager.level.update(dt)
+        if self.levelManager.level:
+            self.levelManager.level.update(dt)
 
     def draw(self):
         self.screen.fill((0, 0, 0))
-        self.levelManager.level.draw()
+        if self.levelManager.level:
+            self.levelManager.level.draw()
 
     def run(self):
         while self.running:

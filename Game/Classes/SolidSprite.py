@@ -1,4 +1,4 @@
-from Sprites.Sprite import Sprite
+from Classes.Sprite import Sprite
 
 
 class SolidSprite(Sprite):

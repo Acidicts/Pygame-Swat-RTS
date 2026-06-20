@@ -14,7 +14,7 @@ class SpriteGroup:
             sprite.draw(surface)
 
     def update(self, dt):
-        for sprite in self.sprites.values():
+        for sprite in list(self.sprites.values()):
             sprite.update(dt)
 
     def clear(self):

@@ -2,7 +2,7 @@ import heapq
 import random
 import pygame
 
-from Sprites.Sprite import Sprite
+from Classes.Sprite import Sprite
 
 
 class PathFindingSprite(Sprite):
@@ -18,27 +18,40 @@ class PathFindingSprite(Sprite):
         self._step_timer = 0
         self._step_interval = 0.3
         self._current_speed = self.speed
+        self._obstacles = {}
 
     def move_to(self, target_x, target_y, obstacles):
+        self._obstacles = obstacles
+
         screen = pygame.display.get_surface()
         screen_w, screen_h = screen.get_size()
 
         grid_w = screen_w // self.CELL_SIZE
         grid_h = screen_h // self.CELL_SIZE
 
+        sprite_cells_x = max(1, self.rect.width // self.CELL_SIZE)
+        sprite_cells_y = max(1, self.rect.height // self.CELL_SIZE)
+        pad_x = sprite_cells_x // 2
+        pad_y = sprite_cells_y // 2
+
         blocked = set()
         for obs in obstacles.values():
             rect = obs.img.get_rect(topleft=(obs.x, obs.y))
-            left = max(0, rect.left // self.CELL_SIZE)
-            right = min(grid_w - 1, rect.right // self.CELL_SIZE)
-            top = max(0, rect.top // self.CELL_SIZE)
-            bottom = min(grid_h - 1, rect.bottom // self.CELL_SIZE)
+            left = max(0, rect.left // self.CELL_SIZE - pad_x)
+            right = min(grid_w - 1, rect.right // self.CELL_SIZE + pad_x)
+            top = max(0, rect.top // self.CELL_SIZE - pad_y)
+            bottom = min(grid_h - 1, rect.bottom // self.CELL_SIZE + pad_y)
             for gx in range(left, right + 1):
                 for gy in range(top, bottom + 1):
                     blocked.add((gx, gy))
 
         start = (int(self.x) // self.CELL_SIZE, int(self.y) // self.CELL_SIZE)
         goal = (int(target_x) // self.CELL_SIZE, int(target_y) // self.CELL_SIZE)
+
+        if start in blocked:
+            blocked.discard(start)
+        if goal in blocked:
+            blocked.discard(goal)
 
         grid_path = self._astar(start, goal, blocked, grid_w, grid_h)
         self.path = self._smooth_path(grid_path, blocked)
@@ -88,9 +101,6 @@ class PathFindingSprite(Sprite):
         return True
 
     def _astar(self, start, goal, blocked, grid_w, grid_h):
-        if start in blocked or goal in blocked:
-            return []
-
         open_set = [(0, start)]
         came_from = {}
         g_score = {start: 0}
@@ -129,6 +139,15 @@ class PathFindingSprite(Sprite):
         path.reverse()
         return path
 
+    def _collides_at(self, x, y):
+        test_rect = self.rect.copy()
+        test_rect.topleft = (x, y)
+        for obs in self._obstacles.values():
+            obs_rect = obs.img.get_rect(topleft=(obs.x, obs.y))
+            if test_rect.colliderect(obs_rect):
+                return True
+        return False
+
     def update(self, dt):
         if not self.path:
             return
@@ -145,12 +164,16 @@ class PathFindingSprite(Sprite):
         dist = (dx ** 2 + dy ** 2) ** 0.5
 
         if dist < self._current_speed * dt:
-            self.x = target_px
-            self.y = target_py
+            if not self._collides_at(target_px, target_py):
+                self.x = target_px
+                self.y = target_py
+                self.rect.topleft = (self.x, self.y)
             self.path.pop(0)
         else:
-            self.x += (dx / dist) * self._current_speed * dt
-            self.y += (dy / dist) * self._current_speed * dt
-
-        self.rect.topleft = (self.x, self.y)
+            new_x = self.x + (dx / dist) * self._current_speed * dt
+            new_y = self.y + (dy / dist) * self._current_speed * dt
+            if not self._collides_at(new_x, new_y):
+                self.x = new_x
+                self.y = new_y
+                self.rect.topleft = (self.x, self.y)
 

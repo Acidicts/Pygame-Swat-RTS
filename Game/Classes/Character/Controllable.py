@@ -1,18 +1,19 @@
 import pygame
 
-from Sprites.PathFindingSprite import PathFindingSprite
+from .Armed import Armed
 from Utils.Utils import zIndex
 
 
-class Controllable(PathFindingSprite):
-    def __init__(self, x, y, img, colour):
+class Controllable(Armed):
+    def __init__(self, x, y, img, colour, game):
         z = zIndex["Characters"]
-        super().__init__(img, x, y, z)
+        super().__init__(x, y, img, colour, game)
 
         self.selected = False
         self.colour = colour
 
     def draw(self, surf):
-        surf.blit(self.img, (self.x, self.y))
+        super().draw(surf)
+
         if self.selected:
             pygame.draw.aacircle(surf, self.colour, self.rect.center, 150*0.15, 2)

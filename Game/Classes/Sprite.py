@@ -12,3 +12,7 @@ class Sprite:
 
     def update(self, dt):
         self.rect = self.img.get_rect()
+        self.rect.topleft = (self.x, self.y)
+
+    def destroy(self):
+        del self

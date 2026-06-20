@@ -16,20 +16,18 @@ class LevelManager:
     def load_level(self, name):
         self.level = self.levels[name]
 
-        if type(self.level) != Level:
+        if not isinstance(self.level, Level):
             raise TypeError
 
         self.level.load()
 
     def draw(self):
-        if type(self.level) != Level:
-            pass
-        self.level.draw()
+        if self.level:
+            self.level.draw()
 
     def update(self, dt):
-        if type(self.level) != Level:
-            pass
-        self.level.update(dt)
+        if self.level:
+            self.level.update(dt)
 
     def load_levels(self, path=os.path.join(BASE_PATH, "Assets", "Levels")):
         for dirpath, dirnames, filenames in os.walk(path):
@@ -37,4 +35,4 @@ class LevelManager:
                 if filename.endswith(".json"):
                     file_path = os.path.join(dirpath, filename)
                     data = json_to_dict(file_path)
-                    self.levels[data["name"]] = Level(file_path, self.game.assets)
+                    self.levels[data["name"]] = Level(file_path, self.game)

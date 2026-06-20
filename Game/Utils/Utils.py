@@ -66,10 +66,35 @@ def scale(img, s=(1, 1), smooth=False):
 def scale_to(img, s=(1, 1)):
     return pygame.transform.scale(img, s)
 
-
 def create_character(colour):
-    img = pygame.Surface((256, 256))
+    img = pygame.Surface((256, 256), pygame.SRCALPHA)
     pygame.draw.aacircle(img, colour, img.get_rect().center, 128, 8)
     pygame.draw.aacircle(img, colour, img.get_rect().center, 100)
+
+    return img
+
+def create_from_bitmap(bitmap, colour:tuple=(0,0,0)):
+    if bitmap is None or len(bitmap) == 0:
+        return None
+    if bitmap[0] is None or len(bitmap[0]) == 0:
+        return None
+
+    rows = len(bitmap)
+    cols = len(bitmap[0])
+    img = pygame.Surface((cols, rows), pygame.SRCALPHA)
+
+    type_bitmap = type(bitmap[0][0])
+
+    for y, row in enumerate(bitmap):
+        for x, pixel in enumerate(row):
+            if type_bitmap is tuple:
+                if pixel != (0, 0, 0) and pixel != (0, 0, 0, 0):
+                    pygame.draw.rect(img, pixel, (x, y, 1, 1))
+            elif type_bitmap is bool:
+                if pixel:
+                    pygame.draw.rect(img, colour, (x, y, 1, 1))
+            elif type_bitmap is int:
+                if pixel != 0:
+                    pygame.draw.rect(img, (pixel,)*3, (x, y, 1, 1))
 
     return img

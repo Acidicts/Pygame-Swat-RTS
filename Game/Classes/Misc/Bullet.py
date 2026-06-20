@@ -2,18 +2,19 @@ import math
 import pygame
 
 from Classes.Sprite import Sprite
-from Utils.Utils import zIndex, scale
+from Utils.Utils import zIndex, scale, characterColours
 
 
 # Penetration is .cal
 
 class Bullet(Sprite):
-    def __init__(self, x, y, bearing, vel, penetration, game, ttl=10):
+    def __init__(self, x, y, bearing, vel, penetration, game, shooter, ttl=10):
         # Bearing is a bearing angle in deg 000 to 359
         self.bearing = bearing
         self.velocity = vel
         self.penetration = penetration
         self.game = game
+        self.shooter = shooter
 
         self.ttl = ttl
         self.alive = True
@@ -72,7 +73,12 @@ class Bullet(Sprite):
         }
 
     def get_enemies(self):
-        return self.game.levelManager.level.sprites["Enemies"].sprites.values()
+        if self.shooter.colour == characterColours["Squad"] or self.shooter.colour == characterColours["Commander"]:
+            return self.game.levelManager.level.sprites["Enemies"].sprites.values()
+        elif self.shooter.colour == characterColours["Enemy"]:
+            return self.game.levelManager.level.sprites["Squad"].sprites.values()
+        else:
+            return []
 
     def check_collision(self):
         impenetrable = self.get_impenetrable_walls()
@@ -87,7 +93,7 @@ class Bullet(Sprite):
                 return True
 
         for enemy in self.get_enemies():
-            if self.rect.colliderect(enemy.rect):
+            if self.rect.colliderect(enemy.rect) and self.shooter != enemy:
                 enemy.take_damage(self.penetration*self.velocity*0.3)
                 self.destroy()
                 return True

@@ -24,7 +24,8 @@ penetration_levels = {
 characterColours = {
     "Squad" : (0, 0, 200),
     "Commander" : (200, 200, 0),
-    "Enemy" : (200, 10, 10)
+    "Enemy" : (200, 10, 10),
+    "Dead" : (100, 100, 100)
 }
 
 

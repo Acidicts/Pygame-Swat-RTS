@@ -63,6 +63,7 @@ class Game:
         self.assets["Commander"] = create_character(characterColours["Commander"])
         self.assets["Squad"] = create_character(characterColours["Squad"])
         self.assets["Enemy"] = create_character(characterColours["Enemy"])
+        self.assets["Dead"] = create_character(characterColours["Dead"])
 
     def inputs(self):
         for event in pygame.event.get():

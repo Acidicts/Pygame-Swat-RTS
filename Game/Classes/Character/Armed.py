@@ -2,7 +2,7 @@ import math
 import pygame
 
 from Classes.PathFindingSprite import PathFindingSprite
-from Utils.Utils import zIndex
+from Utils.Utils import zIndex, scale
 
 
 class Armed(PathFindingSprite):
@@ -27,6 +27,7 @@ class Armed(PathFindingSprite):
 
         self.can_shoot = False
 
+        self.alive = True
         self.health = 120
 
         self.weapons = {
@@ -37,6 +38,11 @@ class Armed(PathFindingSprite):
 
     def equip(self):
         pass
+
+    def die(self):
+        self.can_shoot = False
+        self.alive = False
+        self.img = scale(self.game.assets["Dead"], 0.15, smooth=True)
 
     def take_damage(self, damage):
         self.health -= damage
@@ -115,6 +121,9 @@ class Armed(PathFindingSprite):
         best_dist = float('inf')
         best_enemy = None
         for enemy in enemies.values():
+            if enemy.alive is False:
+                continue
+
             ex = enemy.x + enemy.rect.width / 2
             ey = enemy.y + enemy.rect.height / 2
 
@@ -136,7 +145,7 @@ class Armed(PathFindingSprite):
     def draw(self, surf):
         super().draw(surf)
 
-        if self.sees_enemy:
+        if self.sees_enemy and self.alive:
             gun_points = self._get_gun_rect()[1]
             pygame.draw.polygon(surf, self.colour, gun_points)
 
@@ -149,15 +158,12 @@ class Armed(PathFindingSprite):
             return
 
         self.shot_timer = 0
-        self.game.levelManager.level.create_bullet(self.rect.centerx, self.rect.centery, self.angle+90.0, 100, 2, self.game)
-
-    def die(self):
-        pass
+        self.game.levelManager.level.create_bullet(self.rect.centerx, self.rect.centery, self.angle+90.0, 100, 2, self.game, self)
 
     def update(self, dt):
         super().update(dt)
 
-        if self.sees_enemy and self.can_shoot:
+        if self.sees_enemy and self.can_shoot and self.alive:
             self.shoot()
 
         if self.health <= 0:

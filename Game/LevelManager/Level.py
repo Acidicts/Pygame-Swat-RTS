@@ -30,8 +30,8 @@ class Level:
         self.dragging = False
         self.drag_rect = None
 
-    def create_bullet(self, x, y, bearing, vel, penetration, game):
-        return self.sprites["Bullets"].add(Bullet(x, y, bearing, vel, penetration, game))
+    def create_bullet(self, x, y, bearing, vel, penetration, game, shooter):
+        return self.sprites["Bullets"].add(Bullet(x, y, bearing, vel, penetration, game, shooter))
 
 
     @staticmethod
@@ -86,6 +86,8 @@ class Level:
 
         if keys[pygame.K_x]:
             for s in self.selected:
+                if isinstance(s, SquadMember) and not s.has_connection():
+                    continue
                 s.can_shoot = not s.can_shoot
 
         if mouse_click[0]:
@@ -136,6 +138,8 @@ class Level:
             count = len(self.selected)
             positions = self._get_formation_positions(mouse_pos[0], mouse_pos[1], count)
             for i, sprite in enumerate(self.selected):
+                if isinstance(sprite, SquadMember) and not sprite.has_connection():
+                    continue
                 sprite.move_to(positions[i][0], positions[i][1], self.sprites["Walls"].sprites)
 
         if mouse_click[2]:
@@ -162,6 +166,7 @@ class Level:
         self.unload()
 
         data = json_to_dict(self.path)
+        commander = None
         for group in self.sprites.keys():
             try:
                 for obj in data[group.lower()].values():
@@ -172,9 +177,10 @@ class Level:
                             self.sprites["Walls"].add(Wall(obj[0], obj[1], obj[2], obj[3], obj[4]))
                         case "Squad":
                             if len(self.sprites["Squad"].sprites) == 0:
-                                self.sprites["Squad"].add(Commander(obj[0], obj[1], self.assets, self.game))
+                                commander = Commander(obj[0], obj[1], self.assets, self.game)
+                                self.sprites["Squad"].add(commander)
                             else:
-                                self.sprites["Squad"].add(SquadMember(obj[0], obj[1], self.assets, self.game))
+                                self.sprites["Squad"].add(SquadMember(obj[0], obj[1], self.assets, self.game, commander))
             except KeyError:
                 pass
 

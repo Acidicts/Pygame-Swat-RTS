@@ -2,6 +2,7 @@ import math
 import pygame
 
 from Classes.PathFindingSprite import PathFindingSprite
+from Classes.Misc.CoverGeometry import evaluate_cover
 from Utils.Utils import zIndex, scale
 
 
@@ -142,6 +143,27 @@ class Armed(PathFindingSprite):
                 if obs_rect.collidepoint(px, py):
                     return False
         return True
+
+    # ---------- Cover / precise visibility (CoverGeometry integration) ----------
+
+    def cover_exposure(self, shooter, walls, samples_per_edge=6, max_depth=6):
+        """
+        Full cover-evaluation result for THIS sprite as seen from `shooter`.
+        Returns dict: fully_in_cover, fully_exposed, boundaries, corner_visibility.
+
+        This is more expensive than _check_line_of_sight (recursive boundary
+        search per edge sample) so don't call it every frame for every pair -
+        use it when an Enemy is deciding if its current cover spot still
+        holds, not in the per-frame update_enemies vision loop.
+        """
+        shooter_eye = (shooter.x + shooter.rect.width / 2,
+                       shooter.y + shooter.rect.height / 2)
+        return evaluate_cover(shooter_eye, self.rect, walls,
+                               samples_per_edge, max_depth)
+
+    def is_fully_covered_from(self, shooter, walls, samples_per_edge=6, max_depth=6):
+        """True if `shooter` cannot see any part of this sprite's hitbox."""
+        return self.cover_exposure(shooter, walls, samples_per_edge, max_depth)["fully_in_cover"]
 
     def update_enemies(self, enemies, obstacles):
         self.sees_enemy = False

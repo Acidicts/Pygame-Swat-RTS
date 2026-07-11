@@ -1,3 +1,4 @@
+import math
 import pygame
 
 from .Armed import Armed
@@ -11,6 +12,13 @@ class Controllable(Armed):
 
         self.selected = False
         self.colour = colour
+
+    def move_to(self, target_x, target_y, obstacles):
+        dx = target_x - self.rect.centerx
+        dy = target_y - self.rect.centery
+        if abs(dx) > 0.1 or abs(dy) > 0.1:
+            self.angle = math.degrees(math.atan2(dy, dx))
+        super().move_to(target_x, target_y, obstacles)
 
     def draw(self, surf):
         super().draw(surf)

@@ -29,6 +29,7 @@ class Level:
         self.drag_start = None
         self.dragging = False
         self.drag_rect = None
+        self.debug_mode = False
 
     def create_bullet(self, x, y, bearing, vel, penetration, game, shooter):
         return self.sprites["Bullets"].add(Bullet(x, y, bearing, vel, penetration, game, shooter))
@@ -158,6 +159,11 @@ class Level:
         mouse_held = pygame.mouse.get_pressed()
 
         keys = pygame.key.get_just_pressed()
+
+        if keys[pygame.K_F3]:
+            self.debug_mode = not self.debug_mode
+            for enemy in self.sprites["Enemies"].sprites.values():
+                enemy.debug_mode = self.debug_mode
 
         if keys[pygame.K_x]:
             for s in self.selected:

@@ -34,18 +34,47 @@ class Level:
         return self.sprites["Bullets"].add(Bullet(x, y, bearing, vel, penetration, game, shooter))
 
 
-    @staticmethod
-    def _get_formation_positions(center_x, center_y, count):
+    def _get_formation_positions(self, center_x, center_y, count):
         if count == 1:
             return [(center_x, center_y)]
 
-        spacing = 80
-        positions = []
+        spacing = 70
+        
+        direction = self._get_formation_direction()
+        
+        base_positions = self._generate_base_formation(count, spacing)
+        
+        rotated = self._rotate_positions(base_positions, direction)
+        
+        offset_positions = [(center_x + x, center_y + y) for x, y in rotated]
+        
+        adjusted = self._adjust_for_walls(offset_positions)
+        
+        return adjusted
 
+    def _get_formation_direction(self):
+        if not self.selected:
+            return 0
+        
+        avg_x = sum(s.rect.centerx for s in self.selected) / len(self.selected)
+        avg_y = sum(s.rect.centery for s in self.selected) / len(self.selected)
+        
+        mouse_pos = pygame.mouse.get_pos()
+        dx = mouse_pos[0] - avg_x
+        dy = mouse_pos[1] - avg_y
+        
+        if abs(dx) < 1 and abs(dy) < 1:
+            return 0
+        
+        return math.atan2(dy, dx)
+
+    def _generate_base_formation(self, count, spacing):
+        positions = []
+        
         if count <= 3:
             for i in range(count):
-                x = center_x + (i - count // 2) * spacing
-                positions.append((x, center_y))
+                x = (i - count // 2) * spacing
+                positions.append((x, 0))
         elif count <= 6:
             rows = 2
             cols = math.ceil(count / rows)
@@ -53,29 +82,75 @@ class Level:
                 for c in range(cols):
                     if len(positions) >= count:
                         break
-                    x = center_x + (c - cols // 2) * spacing
-                    y = center_y + (r - rows // 2) * spacing
+                    x = (c - cols // 2) * spacing
+                    y = (r - rows // 2) * spacing
                     positions.append((x, y))
         else:
+            positions.append((0, 0))
             rings = 1
             placed = 1
-            positions.append((center_x, center_y))
             while placed < count:
-                ring = rings
-                ring_spacing = spacing
-                circumference = 2 * math.pi * ring * ring_spacing
-                ring_count = min(int(circumference / ring_spacing), count - placed)
+                circumference = 2 * math.pi * rings * spacing
+                ring_count = min(int(circumference / spacing), count - placed)
                 for i in range(ring_count):
                     angle = (2 * math.pi * i) / ring_count
-                    x = center_x + ring * ring_spacing * math.cos(angle)
-                    y = center_y + ring * ring_spacing * math.sin(angle)
+                    x = rings * spacing * math.cos(angle)
+                    y = rings * spacing * math.sin(angle)
                     positions.append((x, y))
                     placed += 1
                     if placed >= count:
                         break
                 rings += 1
-
+        
         return positions
+
+    def _rotate_positions(self, positions, angle):
+        if abs(angle) < 0.01:
+            return positions
+        
+        cos_a = math.cos(angle)
+        sin_a = math.sin(angle)
+        
+        rotated = []
+        for x, y in positions:
+            new_x = x * cos_a - y * sin_a
+            new_y = x * sin_a + y * cos_a
+            rotated.append((new_x, new_y))
+        
+        return rotated
+
+    def _adjust_for_walls(self, positions):
+        walls = self.sprites["Walls"].sprites
+        if not walls:
+            return positions
+        
+        adjusted = []
+        for x, y in positions:
+            new_x, new_y = x, y
+            
+            for wall in walls.values():
+                wall_rect = wall.img.get_rect(topleft=(wall.x, wall.y))
+                point_rect = pygame.Rect(x - 16, y - 16, 32, 32)
+                
+                if point_rect.colliderect(wall_rect):
+                    cx = wall_rect.centerx
+                    cy = wall_rect.centery
+                    
+                    dx = x - cx
+                    dy = y - cy
+                    dist = math.hypot(dx, dy)
+                    
+                    if dist > 0:
+                        dx /= dist
+                        dy /= dist
+                    
+                    push_dist = 50
+                    new_x = cx + dx * push_dist
+                    new_y = cy + dy * push_dist
+            
+            adjusted.append((new_x, new_y))
+        
+        return adjusted
 
     def inputs(self):
         mouse_pos = pygame.mouse.get_pos()
@@ -140,7 +215,8 @@ class Level:
             for i, sprite in enumerate(self.selected):
                 if not sprite.alive or (isinstance(sprite, SquadMember) and not sprite.has_connection()):
                     continue
-                sprite.move_to(positions[i][0], positions[i][1], self.sprites["Walls"].sprites)
+                if i < len(positions):
+                    sprite.move_to(positions[i][0], positions[i][1], self.sprites["Walls"].sprites)
 
         if mouse_click[2]:
             for s in self.selected:
@@ -172,7 +248,9 @@ class Level:
                 for obj in data[group.lower()].values():
                     match group:
                         case "Enemies":
-                            self.sprites["Enemies"].add(Enemy(obj[0], obj[1], self.assets, self.game))
+                            x, y = obj[0], obj[1]
+                            traits = obj[2] if len(obj) > 2 else None
+                            self.sprites["Enemies"].add(Enemy(x, y, self.assets, self.game, traits))
                         case "Walls":
                             self.sprites["Walls"].add(Wall(obj[0], obj[1], obj[2], obj[3], obj[4]))
                         case "Squad":
@@ -198,6 +276,8 @@ class Level:
         for sprite in enemies.values():
             if hasattr(sprite, 'update_enemies'):
                 sprite.update_enemies(squad, walls)
+            if hasattr(sprite, 'update_ai'):
+                sprite.update_ai(squad, walls)
 
         for sprite in squad.values():
             if hasattr(sprite, 'update_enemies'):

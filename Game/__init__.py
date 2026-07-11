@@ -78,6 +78,25 @@ class Game:
         self.screen.fill((0, 0, 0))
         if self.levelManager.level:
             self.levelManager.level.draw()
+        
+        # self._draw_ai_legend()
+
+    def _draw_ai_legend(self):
+        font = pygame.font.SysFont(None, 20)
+        legend = [
+            ((255, 0, 0), "ATTACK"),
+            ((0, 255, 0), "RETREAT"),
+            ((255, 165, 0), "CHARGE"),
+            ((0, 0, 255), "SEEK COVER"),
+            ((128, 128, 128), "PATROL")
+        ]
+        
+        x, y = 10, 10
+        for color, label in legend:
+            pygame.draw.circle(self.screen, color, (x + 8, y + 8), 6)
+            text = font.render(label, True, (255, 255, 255))
+            self.screen.blit(text, (x + 20, y))
+            y += 20
 
     def run(self):
         while self.running:

@@ -10,6 +10,8 @@ class Gun(Sprite):
         self.attributes = {
             "penetration": attributes["penetration"],
             "velocity": attributes["velocity"],
+            "spread": attributes["spread"],
+            "range": attributes["range"]
         }
 
     def bullet_attributes(self):

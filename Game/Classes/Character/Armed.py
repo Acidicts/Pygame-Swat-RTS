@@ -15,8 +15,11 @@ class Armed(PathFindingSprite):
         self.target_enemy = None
         self.game = game
 
-        self.cone_range = 200
-        self.cone_angle = 60
+        self.vision_range = 350
+        self.vision_angle = 90
+
+        self.cone_range = 180
+        self.cone_angle = 45
 
         self.gun_width = 8
         self.gun_length = 30
@@ -26,6 +29,7 @@ class Armed(PathFindingSprite):
         self.shot_timer = None
 
         self.can_shoot = False
+        self.in_range = False
 
         self.alive = True
         self.health = 120
@@ -47,7 +51,20 @@ class Armed(PathFindingSprite):
     def take_damage(self, damage):
         self.health -= damage
 
-    def _get_cone_poly(self):
+    def _get_vision_cone(self):
+        half = math.radians(self.vision_angle / 2)
+        rad = math.radians(self.angle)
+        cx = self.x + self.rect.width / 2
+        cy = self.y + self.rect.height / 2
+
+        p0 = (cx, cy)
+        p1 = (cx + self.vision_range * math.cos(rad - half),
+              cy + self.vision_range * math.sin(rad - half))
+        p2 = (cx + self.vision_range * math.cos(rad + half),
+              cy + self.vision_range * math.sin(rad + half))
+        return [p0, p1, p2]
+
+    def _get_gun_cone(self):
         half = math.radians(self.cone_angle / 2)
         rad = math.radians(self.angle)
         cx = self.x + self.rect.width / 2
@@ -78,8 +95,23 @@ class Armed(PathFindingSprite):
             (cx + perp_x, cy + perp_y)
         ]
 
-    def _point_in_cone(self, px, py):
-        cone = self._get_cone_poly()
+    def _point_in_vision_cone(self, px, py):
+        cone = self._get_vision_cone()
+        cx, cy = cone[0]
+        dx = px - cx
+        dy = py - cy
+        dist = math.hypot(dx, dy)
+        if dist > self.vision_range:
+            return False
+
+        angle_to = math.degrees(math.atan2(dy, dx)) % 360
+        diff = (angle_to - self.angle) % 360
+        if diff > 180:
+            diff -= 360
+        return abs(diff) <= self.vision_angle / 2
+
+    def _point_in_gun_cone(self, px, py):
+        cone = self._get_gun_cone()
         cx, cy = cone[0]
         dx = px - cx
         dy = py - cy
@@ -114,6 +146,7 @@ class Armed(PathFindingSprite):
     def update_enemies(self, enemies, obstacles):
         self.sees_enemy = False
         self.target_enemy = None
+        self.in_range = False
 
         cx = self.x + self.rect.width / 2
         cy = self.y + self.rect.height / 2
@@ -126,21 +159,29 @@ class Armed(PathFindingSprite):
 
             ex = enemy.x + enemy.rect.width / 2
             ey = enemy.y + enemy.rect.height / 2
+            dist = math.hypot(ex - cx, ey - cy)
 
-            if self._check_line_of_sight(ex, ey, obstacles):
-                dist = math.hypot(ex - cx, ey - cy)
-                if dist < best_dist:
-                    best_dist = dist
-                    best_enemy = enemy
+            if dist > self.vision_range:
+                continue
+
+            if not self._check_line_of_sight(ex, ey, obstacles):
+                continue
+
+            if not self._point_in_vision_cone(ex, ey):
+                continue
+
+            if dist < best_dist:
+                best_dist = dist
+                best_enemy = enemy
 
         if best_enemy:
             ex = best_enemy.x + best_enemy.rect.width / 2
             ey = best_enemy.y + best_enemy.rect.height / 2
             self.angle = math.degrees(math.atan2(ey - cy, ex - cx))
 
-            if self._point_in_cone(ex, ey):
-                self.target_enemy = best_enemy
-                self.sees_enemy = True
+            self.target_enemy = best_enemy
+            self.sees_enemy = True
+            self.in_range = self._point_in_gun_cone(ex, ey)
 
     def draw(self, surf):
         super().draw(surf)
@@ -148,6 +189,12 @@ class Armed(PathFindingSprite):
         if self.sees_enemy and self.alive:
             gun_points = self._get_gun_rect()[1]
             pygame.draw.polygon(surf, self.colour, gun_points)
+
+            vision_cone = self._get_vision_cone()
+            cone_color = (255, 255, 0, 30) if self.in_range else (255, 255, 0, 15)
+            cone_surf = pygame.Surface((800, 600), pygame.SRCALPHA)
+            pygame.draw.polygon(cone_surf, cone_color, vision_cone)
+            surf.blit(cone_surf, (0, 0))
 
         if self.can_shoot:
             pygame.draw.aacircle(surf, (120, 6, 6), self.rect.center, 30*0.15)
@@ -161,9 +208,12 @@ class Armed(PathFindingSprite):
         self.game.levelManager.level.create_bullet(self.rect.centerx, self.rect.centery, self.angle+90.0, 100, 2, self.game, self)
 
     def update(self, dt):
+        if not self.alive:
+            return
+
         super().update(dt)
 
-        if self.sees_enemy and self.can_shoot and self.alive:
+        if self.sees_enemy and self.in_range and self.can_shoot and self.alive:
             self.shoot()
 
         if self.health <= 0:

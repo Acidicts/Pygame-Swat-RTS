@@ -2,7 +2,7 @@ import math
 import pygame
 
 from Classes.Sprite import Sprite
-from Utils.Utils import zIndex, scale, characterColours
+from Utils.Utils import zIndex, scale, characterColours, penetration_levels
 
 
 # Penetration is .cal
@@ -113,5 +113,10 @@ class Bullet(Sprite):
             return
         self.move_with_collision(dt)
         self.ttl -= dt
+        self.velocity -= self.penetration * 0.1
+
         if self.ttl <= 0:
             self.destroy()
+
+        if self.velocity <= 10:
+            self.img = scale(self.img, 0.9, smooth=False)

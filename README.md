@@ -2,7 +2,7 @@
 
 This is a game in early development which is meant to be almost a swat commander experience from bird's eyeview
 
-Features:
+###Features:
 - Control over other officers
 - Radio blocking materials ( decrease chance of order being passed through )
 - Weapon Characteristics
@@ -10,10 +10,24 @@ Features:
 - Team vision cones
 - Last known enemy position when out of team site
 
-Controls:
+###Controls:
 - Left click to select individual team members
 - Drag left click to select multiple team members
 - (When team members selected) Clicking in empty area will tell them to go to the area
 - `X` Enables shooting
 
 <img width="795" height="629" alt="Screenshot 2026-10-29 at 11 34 19" src="https://github.com/user-attachments/assets/33320f99-9c04-4674-a8d9-6f7e74ec7191" />
+
+
+
+Requires Python 3.10+.
+
+1. Clone the repo:
+   `git clone https://github.com/Acidicts/Pygame-Swat-RTS && cd Pygame-Swat-RTS`
+2. (Recommended) Create and activate a virtual environment:
+   `python -m venv .venv`
+   then `source .venv/bin/activate` (Windows: `.venv\Scripts\activate`)
+3. Install dependencies:
+   `pip install -r requirements.txt`
+4. Run the game:
+   `python main.py` (use `python3` if `python` isn't found)

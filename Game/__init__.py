@@ -2,7 +2,7 @@ import pygame
 import os
 
 from LevelManager.Manager import LevelManager
-from Utils.Utils import create_character, characterColours, create_from_bitmap, json_to_dict
+from Utils.Utils import create_character, characterColours, create_from_bitmap, json_to_dict, BASE_PATH
 
 
 class Game:
@@ -37,7 +37,7 @@ class Game:
         self.load_misc()
 
     def load_weapon_files(self):
-        for dirpath, dirnames, filenames in os.walk("Game/Assets/Weapons/"):
+        for dirpath, dirnames, filenames in os.walk(os.path.join(BASE_PATH, "Assets", "Weapons")):
             for filename in filenames:
                 if filename.endswith(".json"):
                     # Raw File
